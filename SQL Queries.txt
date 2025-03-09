@@ -1,0 +1,32 @@
+# Creating the table in Stations Database in Azure
+CREATE TABLE Stations (
+	id NVARCHAR(255) PRIMARY KEY,
+	name NVARCHAR(255),
+        elevation DECIMAL(12,6),
+	elevationUnit NVARCHAR(255),
+	latitude DECIMAL(10,6),
+        longitude DECIMAL(10,6),
+	mindate DATE,
+	maxdate DATE,
+	datacoverage NVARCHAR(255)
+);
+
+# Harmonize units (foot into meter)
+UPDATE [dbo].[Stations]
+SET elevation = elevation * 0.3048
+WHERE elevationUnit LIKE 'FOOT';
+
+# Clean 'name' column and extract country code where it is possible, query all rows which have country code extracted
+SELECT
+id,
+CASE WHEN CHARINDEX(',', name) > 0 THEN SUBSTRING(name, 1, CHARINDEX(',', name) - 1) ELSE name  END AS stationName,
+CASE WHEN name LIKE '%,%' THEN RIGHT(name, 2) ELSE 'N/A' END AS countryKey,
+elevation,
+elevationUnit,
+latitude,
+longitude,
+mindate AS minDate,
+maxdate AS maxDate,
+datacoverage
+FROM [dbo].[Stations]
+WHERE (SELECT CASE WHEN name LIKE '%,%' THEN RIGHT(name, 2) ELSE NULL END AS countryKey) IS NOT NULL;
